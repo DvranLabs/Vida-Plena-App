@@ -12,7 +12,8 @@ import {
   Package,
   Loader2,
   ChevronLeft,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Product, TransactionItem } from './types';
 
@@ -38,6 +39,13 @@ export default function App() {
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
   const [adjustQuantity, setAdjustQuantity] = useState<number>(0);
   const [adjustReason, setAdjustReason] = useState<string>('');
+  
+  // New states for adding and deleting
+  const [isAdding, setIsAdding] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductQuantity, setNewProductQuantity] = useState(1);
+  const [newProductUnit, setNewProductUnit] = useState('piezas');
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
 
   const startFlow = (flow: Flow) => {
     setActiveFlow(flow);
@@ -139,6 +147,26 @@ export default function App() {
     }
   };
 
+  const deleteProduct = (id: string) => {
+    setInventory(inventory.filter(p => p.id !== id));
+  };
+
+  const confirmAdd = () => {
+    if (newProductName.trim()) {
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        name: newProductName,
+        quantity: newProductQuantity,
+        unit: newProductUnit
+      };
+      setInventory([...inventory, newProduct]);
+      setIsAdding(false);
+      setNewProductName('');
+      setNewProductQuantity(1);
+      setNewProductUnit('piezas');
+    }
+  };
+
   const renderHome = () => (
     <div className="p-8 space-y-6">
       <div className="mb-10 mt-4">
@@ -181,9 +209,22 @@ export default function App() {
       <div className="p-8 flex flex-col h-full">
         <div className="flex justify-between items-center mb-8 mt-2">
           <h1 className="text-3xl font-serif text-natural-text">Vista Rápida</h1>
-          <span className="bg-natural-sand text-natural-green-dark px-4 py-1.5 rounded-[20px] text-[10px] font-bold uppercase tracking-wider">
-            Actualizado
-          </span>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setIsAdding(true)}
+              className="bg-natural-green text-white p-2.5 rounded-full shadow-md hover:bg-natural-green-dark transition-colors"
+              title="Agregar producto"
+            >
+              <Plus size={20} />
+            </button>
+            <button 
+              onClick={() => setIsDeleteMode(!isDeleteMode)}
+              className={`${isDeleteMode ? 'bg-natural-clay text-white' : 'bg-natural-sand text-natural-text-light'} p-2.5 rounded-full shadow-md transition-colors`}
+              title="Eliminar productos"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
         </div>
         
         <div className="relative mb-8">
@@ -201,18 +242,33 @@ export default function App() {
           {filtered.map(product => (
             <div 
               key={product.id} 
-              onClick={() => openAdjustModal(product)}
-              className="bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border flex items-center justify-between cursor-pointer hover:border-natural-green/50 transition-colors"
+              onClick={() => !isDeleteMode && openAdjustModal(product)}
+              className={`bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border flex items-center justify-between transition-colors ${!isDeleteMode ? 'cursor-pointer hover:border-natural-green/50' : 'border-natural-clay/30'}`}
             >
               <div>
                 <h3 className="font-semibold text-natural-text text-lg">{product.name}</h3>
-                <p className="text-xs text-natural-text-light mt-1">Toca para corregir</p>
+                <p className="text-xs text-natural-text-light mt-1">
+                  {isDeleteMode ? 'Toca el icono para eliminar' : 'Toca para corregir'}
+                </p>
               </div>
-              <div className="text-right">
-                <span className={`text-2xl font-serif font-bold ${product.quantity <= 5 ? 'text-natural-clay' : 'text-natural-green-dark'}`}>
-                  {product.quantity}
-                </span>
-                <p className="text-[10px] text-natural-text-light uppercase tracking-widest mt-1">{product.unit}</p>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <span className={`text-2xl font-serif font-bold ${product.quantity <= 5 ? 'text-natural-clay' : 'text-natural-green-dark'}`}>
+                    {product.quantity}
+                  </span>
+                  <p className="text-[10px] text-natural-text-light uppercase tracking-widest mt-1">{product.unit}</p>
+                </div>
+                {isDeleteMode && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteProduct(product.id);
+                    }}
+                    className="p-3 bg-natural-clay/10 text-natural-clay rounded-full hover:bg-natural-clay hover:text-white transition-all"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -441,6 +497,65 @@ export default function App() {
                 <AlertCircle size={14} className="mr-1" /> Debes ingresar un motivo
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {isAdding && (
+        <div className="fixed inset-0 bg-natural-text/40 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+          <div className="bg-natural-card rounded-[32px] p-8 w-full max-w-sm shadow-[0_20px_40px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in duration-200 border border-natural-border">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h3 className="text-2xl font-serif text-natural-text">Nuevo Producto</h3>
+                <p className="text-natural-text-light mt-1 text-sm">Completa los detalles</p>
+              </div>
+              <button onClick={() => setIsAdding(false)} className="p-2 bg-natural-sand text-natural-text-light rounded-full hover:text-natural-text transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2">Nombre</label>
+              <input 
+                type="text" 
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
+                placeholder="Ej. Jabón de manos"
+                className="w-full p-4 bg-natural-bg border border-natural-border rounded-[20px] focus:bg-natural-card focus:border-natural-green focus:ring-1 focus:ring-natural-green outline-none transition-all text-sm font-semibold"
+              />
+            </div>
+
+            <div className="mb-6 flex space-x-4">
+              <div className="flex-1">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">Cantidad</label>
+                <input 
+                  type="number" 
+                  value={newProductQuantity}
+                  onChange={(e) => setNewProductQuantity(parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full p-4 bg-natural-bg border border-natural-border rounded-[20px] focus:bg-natural-card focus:border-natural-green focus:ring-1 focus:ring-natural-green outline-none transition-all text-sm font-semibold text-center"
+                />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">Unidad</label>
+                <input 
+                  type="text" 
+                  value={newProductUnit}
+                  onChange={(e) => setNewProductUnit(e.target.value)}
+                  placeholder="Ej. cajas"
+                  className="w-full p-4 bg-natural-bg border border-natural-border rounded-[20px] focus:bg-natural-card focus:border-natural-green focus:ring-1 focus:ring-natural-green outline-none transition-all text-sm font-semibold text-center"
+                />
+              </div>
+            </div>
+
+            <button 
+              onClick={confirmAdd}
+              disabled={!newProductName.trim()}
+              className="w-full bg-natural-green disabled:bg-natural-sand disabled:text-natural-text-light disabled:cursor-not-allowed hover:bg-natural-green-dark text-white py-5 rounded-[32px] font-serif text-xl shadow-[0_10px_30px_rgba(136,158,129,0.2)] flex items-center justify-center transition-all"
+            >
+              <Check size={24} className="mr-2" />
+              Agregar
+            </button>
           </div>
         </div>
       )}

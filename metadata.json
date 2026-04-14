@@ -1,0 +1,8 @@
+{
+  "name": "AsiloGest - Inventario",
+  "description": "Aplicación móvil sencilla para gestionar el inventario de un asilo mediante captura de fotos.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

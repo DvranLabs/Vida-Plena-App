@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Camera,
-  PackagePlus,
   PackageMinus,
   Search,
   Plus,
@@ -25,12 +24,22 @@ const INITIAL_INVENTORY: Product[] = [
   { id: '5', name: 'Jabón Neutro', quantity: 15, unit: 'piezas' },
 ];
 
+const LOCAL_STORAGE_KEY = 'asilogest_inventory';
+
 type Tab = 'home' | 'inventory';
 type Flow = 'none' | 'compra' | 'salida';
 type Step = 'camera' | 'processing' | 'review';
 
 export default function App() {
-  const [inventory, setInventory] = useState<Product[]>(INITIAL_INVENTORY);
+  const [inventory, setInventory] = useState<Product[]>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_INVENTORY;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventory));
+  }, [inventory]);
+
   const [currentTab, setCurrentTab] = useState<Tab>('home');
   const [activeFlow, setActiveFlow] = useState<Flow>('none');
   const [flowStep, setFlowStep] = useState<Step>('camera');

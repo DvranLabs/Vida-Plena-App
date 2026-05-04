@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Camera,
   PackageMinus,
@@ -12,23 +12,23 @@ import {
   Loader2,
   ChevronLeft,
   AlertCircle,
-  Trash2
-} from 'lucide-react';
-import { Product, TransactionItem } from './types';
+  Trash2,
+} from "lucide-react";
+import { Product, TransactionItem } from "./types";
 
 const INITIAL_INVENTORY: Product[] = [
-  { id: '1', name: 'Pañales Adulto Talla G', quantity: 45, unit: 'paquetes' },
-  { id: '2', name: 'Leche Deslactosada 1L', quantity: 12, unit: 'litros' },
-  { id: '3', name: 'Paracetamol 500mg', quantity: 30, unit: 'cajas' },
-  { id: '4', name: 'Papel Higiénico', quantity: 24, unit: 'rollos' },
-  { id: '5', name: 'Jabón Neutro', quantity: 15, unit: 'piezas' },
+  { id: "1", name: "Pañales Adulto Talla G", quantity: 45, unit: "paquetes" },
+  { id: "2", name: "Leche Deslactosada 1L", quantity: 12, unit: "litros" },
+  { id: "3", name: "Paracetamol 500mg", quantity: 30, unit: "cajas" },
+  { id: "4", name: "Papel Higiénico", quantity: 24, unit: "rollos" },
+  { id: "5", name: "Jabón Neutro", quantity: 15, unit: "piezas" },
 ];
 
-const LOCAL_STORAGE_KEY = 'asilogest_inventory';
+const LOCAL_STORAGE_KEY = "asilogest_inventory";
 
-type Tab = 'home' | 'inventory';
-type Flow = 'none' | 'compra' | 'salida';
-type Step = 'camera' | 'processing' | 'review';
+type Tab = "home" | "inventory";
+type Flow = "none" | "compra" | "salida";
+type Step = "camera" | "processing" | "review";
 
 export default function App() {
   const [inventory, setInventory] = useState<Product[]>(() => {
@@ -40,54 +40,73 @@ export default function App() {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventory));
   }, [inventory]);
 
-  const [currentTab, setCurrentTab] = useState<Tab>('home');
-  const [activeFlow, setActiveFlow] = useState<Flow>('none');
-  const [flowStep, setFlowStep] = useState<Step>('camera');
+  const [currentTab, setCurrentTab] = useState<Tab>("home");
+  const [activeFlow, setActiveFlow] = useState<Flow>("none");
+  const [flowStep, setFlowStep] = useState<Step>("camera");
   const [tempItems, setTempItems] = useState<TransactionItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
   const [adjustQuantity, setAdjustQuantity] = useState<number>(0);
-  const [adjustReason, setAdjustReason] = useState<string>('');
-  
+  const [adjustReason, setAdjustReason] = useState<string>("");
+
   // New states for adding and deleting
   const [isAdding, setIsAdding] = useState(false);
-  const [newProductName, setNewProductName] = useState('');
+  const [newProductName, setNewProductName] = useState("");
   const [newProductQuantity, setNewProductQuantity] = useState(1);
-  const [newProductUnit, setNewProductUnit] = useState('piezas');
+  const [newProductUnit, setNewProductUnit] = useState("piezas");
   const [isDeleteMode, setIsDeleteMode] = useState(false);
 
   const startFlow = (flow: Flow) => {
     setActiveFlow(flow);
-    setFlowStep('camera');
+    setFlowStep("camera");
     setTempItems([]);
   };
 
   const cancelFlow = () => {
-    setActiveFlow('none');
-    setFlowStep('camera');
+    setActiveFlow("none");
+    setFlowStep("camera");
     setTempItems([]);
   };
 
   const handlePhotoTaken = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFlowStep('processing');
+      setFlowStep("processing");
       setTimeout(() => {
-        if (activeFlow === 'compra') {
+        if (activeFlow === "compra") {
           setTempItems([
-            { id: '2', name: 'Leche Deslactosada 1L', quantity: 6, unit: 'litros' },
-            { id: `new-${Date.now()}`, name: 'Galletas Marías', quantity: 4, unit: 'paquetes' }
+            {
+              id: "2",
+              name: "Leche Deslactosada 1L",
+              quantity: 6,
+              unit: "litros",
+            },
+            {
+              id: `new-${Date.now()}`,
+              name: "Galletas Marías",
+              quantity: 4,
+              unit: "paquetes",
+            },
           ]);
         } else {
           setTempItems([
-            { id: '1', name: 'Pañales Adulto Talla G', quantity: 2, unit: 'paquetes' }
+            {
+              id: "1",
+              name: "Pañales Adulto Talla G",
+              quantity: 2,
+              unit: "paquetes",
+            },
           ]);
         }
-        setFlowStep('review');
+        setFlowStep("review");
       }, 2000);
     }
   };
 
-  const updateTempItem = (index: number, field: keyof TransactionItem, value: any) => {
+  const updateTempItem = (
+    index: number,
+    field: keyof TransactionItem,
+    value: any,
+  ) => {
     const newItems = [...tempItems];
     newItems[index] = { ...newItems[index], [field]: value };
     setTempItems(newItems);
@@ -107,17 +126,21 @@ export default function App() {
   };
 
   const addManualItem = () => {
-    setTempItems([...tempItems, { id: `manual-${Date.now()}`, name: '', quantity: 1, unit: 'piezas' }]);
+    setTempItems([
+      ...tempItems,
+      { id: `manual-${Date.now()}`, name: "", quantity: 1, unit: "piezas" },
+    ]);
   };
 
   const confirmTransaction = () => {
     let updatedInventory = [...inventory];
-    tempItems.forEach(item => {
+    tempItems.forEach((item) => {
       if (!item.name.trim()) return;
       const existingIndex = updatedInventory.findIndex(
-        p => p.id === item.id || p.name.toLowerCase() === item.name.toLowerCase()
+        (p) =>
+          p.id === item.id || p.name.toLowerCase() === item.name.toLowerCase(),
       );
-      if (activeFlow === 'compra') {
+      if (activeFlow === "compra") {
         if (existingIndex >= 0) {
           updatedInventory[existingIndex].quantity += item.quantity;
         } else {
@@ -125,39 +148,44 @@ export default function App() {
             id: item.id || Date.now().toString(),
             name: item.name,
             quantity: item.quantity,
-            unit: item.unit
+            unit: item.unit,
           });
         }
-      } else if (activeFlow === 'salida') {
+      } else if (activeFlow === "salida") {
         if (existingIndex >= 0) {
-          updatedInventory[existingIndex].quantity = Math.max(0, updatedInventory[existingIndex].quantity - item.quantity);
+          updatedInventory[existingIndex].quantity = Math.max(
+            0,
+            updatedInventory[existingIndex].quantity - item.quantity,
+          );
         }
       }
     });
     setInventory(updatedInventory);
     cancelFlow();
-    setCurrentTab('inventory');
+    setCurrentTab("inventory");
   };
 
   const openAdjustModal = (product: Product) => {
     setAdjustProduct(product);
     setAdjustQuantity(product.quantity);
-    setAdjustReason('');
+    setAdjustReason("");
   };
 
   const confirmAdjust = () => {
     if (adjustProduct) {
-      const updatedInventory = inventory.map(p => 
-        p.id === adjustProduct.id ? { ...p, quantity: adjustQuantity } : p
+      const updatedInventory = inventory.map((p) =>
+        p.id === adjustProduct.id ? { ...p, quantity: adjustQuantity } : p,
       );
       setInventory(updatedInventory);
-      console.log(`Ajuste guardado para ${adjustProduct.name}. Motivo: ${adjustReason}`);
+      console.log(
+        `Ajuste guardado para ${adjustProduct.name}. Motivo: ${adjustReason}`,
+      );
       setAdjustProduct(null);
     }
   };
 
   const deleteProduct = (id: string) => {
-    setInventory(inventory.filter(p => p.id !== id));
+    setInventory(inventory.filter((p) => p.id !== id));
   };
 
   const confirmAdd = () => {
@@ -166,25 +194,29 @@ export default function App() {
         id: Date.now().toString(),
         name: newProductName,
         quantity: newProductQuantity,
-        unit: newProductUnit
+        unit: newProductUnit,
       };
       setInventory([...inventory, newProduct]);
       setIsAdding(false);
-      setNewProductName('');
+      setNewProductName("");
       setNewProductQuantity(1);
-      setNewProductUnit('piezas');
+      setNewProductUnit("piezas");
     }
   };
 
   const renderHome = () => (
     <div className="p-8 space-y-6">
       <div className="mb-10 mt-4">
-        <h1 className="text-4xl font-serif italic text-natural-green-dark">Asilo Vida Plena</h1>
-        <p className="text-natural-text-light text-xs uppercase tracking-widest mt-2">Sistema de Gestión Amigable</p>
+        <h1 className="text-4xl font-serif italic text-natural-green-dark">
+          Asilo Vida Plena
+        </h1>
+        <p className="text-natural-text-light text-xs uppercase tracking-widest mt-2">
+          Sistema de Gestión Amigable
+        </p>
       </div>
 
-      <button 
-        onClick={() => startFlow('compra')}
+      <button
+        onClick={() => startFlow("compra")}
         className="w-full bg-natural-green text-white p-8 rounded-[32px] shadow-[0_10px_30px_rgba(136,158,129,0.2)] border border-black/5 flex flex-col items-center justify-center space-y-4 transition-transform active:scale-95"
       >
         <div className="w-[70px] h-[70px] bg-white/20 rounded-full flex items-center justify-center">
@@ -192,12 +224,14 @@ export default function App() {
         </div>
         <div className="text-center">
           <h2 className="text-2xl font-serif mb-2">Registrar Compra</h2>
-          <p className="text-white/90 text-sm">Toma una foto al ticket para que la IA registre los productos.</p>
+          <p className="text-white/90 text-sm">
+            Toma una foto al ticket para que la IA registre los productos.
+          </p>
         </div>
       </button>
 
-      <button 
-        onClick={() => startFlow('salida')}
+      <button
+        onClick={() => startFlow("salida")}
         className="w-full bg-natural-green text-white p-8 rounded-[32px] shadow-[0_10px_30px_rgba(136,158,129,0.2)] border border-black/5 flex flex-col items-center justify-center space-y-4 transition-transform active:scale-95"
       >
         <div className="w-[70px] h-[70px] bg-white/20 rounded-full flex items-center justify-center">
@@ -205,40 +239,49 @@ export default function App() {
         </div>
         <div className="text-center">
           <h2 className="text-2xl font-serif mb-2">Registrar Salida</h2>
-          <p className="text-white/90 text-sm">Toma una foto a la libreta de uso diario de suministros.</p>
+          <p className="text-white/90 text-sm">
+            Toma una foto a la libreta de uso diario de suministros.
+          </p>
         </div>
       </button>
     </div>
   );
 
   const renderInventory = () => {
-    const filtered = inventory.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filtered = inventory.filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
     return (
       <div className="p-8 flex flex-col h-full">
         <div className="flex justify-between items-center mb-8 mt-2">
-          <h1 className="text-3xl font-serif text-natural-text">Vista Rápida</h1>
+          <h1 className="text-3xl font-serif text-natural-text">
+            Vista Rápida
+          </h1>
           <div className="flex space-x-2">
-            <button 
+            <button
               onClick={() => setIsAdding(true)}
               className="bg-natural-green text-white p-2.5 rounded-full shadow-md hover:bg-natural-green-dark transition-colors"
               title="Agregar producto"
             >
               <Plus size={20} />
             </button>
-            <button 
+            <button
               onClick={() => setIsDeleteMode(!isDeleteMode)}
-              className={`${isDeleteMode ? 'bg-natural-clay text-white' : 'bg-natural-sand text-natural-text-light'} p-2.5 rounded-full shadow-md transition-colors`}
+              className={`${isDeleteMode ? "bg-natural-clay text-white" : "bg-natural-sand text-natural-text-light"} p-2.5 rounded-full shadow-md transition-colors`}
               title="Eliminar productos"
             >
               <Trash2 size={20} />
             </button>
           </div>
         </div>
-        
+
         <div className="relative mb-8">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-natural-text-light" size={20} />
-          <input 
+          <Search
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-natural-text-light"
+            size={20}
+          />
+          <input
             type="text"
             placeholder="Buscar producto..."
             value={searchQuery}
@@ -248,32 +291,40 @@ export default function App() {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4 pb-24">
-          {filtered.map(product => (
-            <div 
-              key={product.id} 
+          {filtered.map((product) => (
+            <div
+              key={product.id}
               onClick={() => !isDeleteMode && openAdjustModal(product)}
-              className={`bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border flex items-center justify-between transition-colors ${!isDeleteMode ? 'cursor-pointer hover:border-natural-green/50' : 'border-natural-clay/30'}`}
+              className={`bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border flex items-center justify-between transition-colors ${!isDeleteMode ? "cursor-pointer hover:border-natural-green/50" : "border-natural-clay/30"}`}
             >
               <div>
-                <h3 className="font-semibold text-natural-text text-lg">{product.name}</h3>
+                <h3 className="font-semibold text-natural-text text-lg">
+                  {product.name}
+                </h3>
                 <p className="text-xs text-natural-text-light mt-1">
-                  {isDeleteMode ? 'Toca el icono para eliminar' : 'Toca para corregir'}
+                  {isDeleteMode
+                    ? "Toca el icono para eliminar"
+                    : "Toca para corregir"}
                 </p>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-right">
-                  <span className={`text-2xl font-serif font-bold ${product.quantity <= 5 ? 'text-natural-clay' : 'text-natural-green-dark'}`}>
+                  <span
+                    className={`text-2xl font-serif font-bold ${product.quantity <= 5 ? "text-natural-green-dark" : "text-natural-green-dark"}`}
+                  >
                     {product.quantity}
                   </span>
-                  <p className="text-[10px] text-natural-text-light uppercase tracking-widest mt-1">{product.unit}</p>
+                  <p className="text-[10px] text-natural-text-light uppercase tracking-widest mt-1">
+                    {product.unit}
+                  </p>
                 </div>
                 {isDeleteMode && (
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteProduct(product.id);
                     }}
-                    className="p-3 bg-natural-clay/10 text-natural-clay rounded-full hover:bg-natural-clay hover:text-white transition-all"
+                    className="p-3 bg-natural-clay/10 text-natural-green-dark rounded-full hover:bg-natural-clay hover:text-white transition-all"
                   >
                     <Trash2 size={20} />
                   </button>
@@ -293,31 +344,40 @@ export default function App() {
   };
 
   const renderFlow = () => {
-    const isCompra = activeFlow === 'compra';
+    const isCompra = activeFlow === "compra";
 
-    if (flowStep === 'camera') {
+    if (flowStep === "camera") {
       return (
         <div className="flex flex-col h-full bg-natural-bg">
           <div className="p-6 flex items-center mt-2">
-            <button onClick={cancelFlow} className="p-3 text-natural-text-light hover:bg-natural-sand rounded-full transition-colors">
+            <button
+              onClick={cancelFlow}
+              className="p-3 text-natural-text-light hover:bg-natural-sand rounded-full transition-colors"
+            >
               <ChevronLeft size={28} />
             </button>
             <h2 className="text-2xl font-serif text-natural-text ml-2">
-              {isCompra ? 'Registrar Compra' : 'Registrar Salida'}
+              {isCompra ? "Registrar Compra" : "Registrar Salida"}
             </h2>
           </div>
-          
+
           <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-12">
             <div className="text-center px-4">
               <p className="text-natural-text text-lg leading-relaxed">
-                {isCompra ? 'Toma una foto al ticket para que la IA registre los productos.' : 'Toma una foto a la libreta de uso diario de suministros.'}
+                {isCompra
+                  ? "Toma una foto al ticket para que la IA registre los productos."
+                  : "Toma una foto a la libreta de uso diario de suministros."}
               </p>
             </div>
 
             <label className="w-64 h-64 bg-natural-sand text-natural-green-dark rounded-full flex flex-col items-center justify-center shadow-[0_10px_30px_rgba(136,158,129,0.15)] cursor-pointer hover:bg-[#e2dcd0] transition-colors border-4 border-white">
               <Camera size={64} className="mb-4 opacity-80" />
-              <span className="font-serif font-bold text-2xl">Abrir Cámara</span>
-              <span className="text-[10px] bg-white/40 px-3 py-1 rounded-full uppercase tracking-widest mt-3 font-bold">Cámara Lista</span>
+              <span className="font-serif font-bold text-2xl">
+                Abrir Cámara
+              </span>
+              <span className="text-[10px] bg-white/40 px-3 py-1 rounded-full uppercase tracking-widest mt-3 font-bold">
+                Cámara Lista
+              </span>
               <input
                 type="file"
                 accept="image/*"
@@ -331,26 +391,37 @@ export default function App() {
       );
     }
 
-    if (flowStep === 'processing') {
+    if (flowStep === "processing") {
       return (
         <div className="flex flex-col items-center justify-center h-full space-y-6 p-8 bg-natural-bg">
           <Loader2 size={64} className="animate-spin text-natural-green" />
-          <h2 className="text-3xl font-serif text-natural-text text-center">Analizando imagen...</h2>
-          <p className="text-natural-text-light text-center text-lg">Identificando productos y cantidades.</p>
+          <h2 className="text-3xl font-serif text-natural-text text-center">
+            Analizando imagen...
+          </h2>
+          <p className="text-natural-text-light text-center text-lg">
+            Identificando productos y cantidades.
+          </p>
         </div>
       );
     }
 
-    if (flowStep === 'review') {
+    if (flowStep === "review") {
       return (
         <div className="flex flex-col h-full bg-natural-bg">
           <div className="p-6 flex items-center bg-natural-bg z-10 mt-2">
-            <button onClick={cancelFlow} className="p-3 text-natural-text-light hover:bg-natural-sand rounded-full transition-colors">
+            <button
+              onClick={cancelFlow}
+              className="p-3 text-natural-text-light hover:bg-natural-sand rounded-full transition-colors"
+            >
               <X size={24} />
             </button>
             <div className="ml-3">
-              <h2 className="text-2xl font-serif text-natural-text">Revisar Propuesta</h2>
-              <p className="text-sm text-natural-text-light mt-1">Corrige si hay algún error</p>
+              <h2 className="text-2xl font-serif text-natural-text">
+                Revisar Propuesta
+              </h2>
+              <p className="text-sm text-natural-text-light mt-1">
+                Corrige si hay algún error
+              </p>
             </div>
           </div>
 
@@ -360,49 +431,60 @@ export default function App() {
                 No se detectaron artículos. Agrega uno manualmente.
               </div>
             )}
-            
+
             {tempItems.map((item, idx) => (
-              <div key={idx} className="bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border relative">
-                <button 
+              <div
+                key={idx}
+                className="bg-natural-card p-6 rounded-[32px] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-natural-border relative"
+              >
+                <button
                   onClick={() => removeTempItem(idx)}
                   className="absolute -top-3 -right-3 bg-natural-clay text-white p-2 rounded-full shadow-md hover:bg-[#c5917b] transition-colors"
                 >
                   <X size={16} />
                 </button>
-                
+
                 <div className="mb-6">
-                  <label className="text-[10px] text-natural-text-light font-bold uppercase tracking-widest">Producto</label>
-                  <input 
-                    type="text" 
+                  <label className="text-[10px] text-natural-text-light font-bold uppercase tracking-widest">
+                    Producto
+                  </label>
+                  <input
+                    type="text"
                     value={item.name}
-                    onChange={(e) => updateTempItem(idx, 'name', e.target.value)}
+                    onChange={(e) =>
+                      updateTempItem(idx, "name", e.target.value)
+                    }
                     placeholder="Nombre del producto"
                     className="w-full text-xl font-semibold text-natural-text border-b border-natural-border focus:border-natural-green py-2 outline-none transition-colors bg-transparent mt-1"
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <label className="text-sm text-natural-text-light font-bold uppercase tracking-widest">Cantidad</label>
+                  <label className="text-sm text-natural-text-light font-bold uppercase tracking-widest">
+                    Cantidad
+                  </label>
                   <div className="flex items-center space-x-4 bg-natural-sand rounded-[24px] p-1.5">
-                    <button 
-                      onClick={() => updateTempQty(idx, -1)} 
+                    <button
+                      onClick={() => updateTempQty(idx, -1)}
                       className="p-3 bg-natural-card rounded-[20px] shadow-sm text-natural-text hover:text-natural-green-dark active:scale-95 transition-all"
                     >
-                      <Minus size={20}/>
+                      <Minus size={20} />
                     </button>
-                    <span className="font-serif font-bold text-2xl w-10 text-center text-natural-green-dark">{item.quantity}</span>
-                    <button 
-                      onClick={() => updateTempQty(idx, 1)} 
+                    <span className="font-serif font-bold text-2xl w-10 text-center text-natural-green-dark">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateTempQty(idx, 1)}
                       className="p-3 bg-natural-card rounded-[20px] shadow-sm text-natural-text hover:text-natural-green-dark active:scale-95 transition-all"
                     >
-                      <Plus size={20}/>
+                      <Plus size={20} />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
 
-            <button 
+            <button
               onClick={addManualItem}
               className="w-full py-6 border-2 border-dashed border-natural-green/30 text-natural-green-dark rounded-[32px] font-semibold flex items-center justify-center hover:bg-natural-green/5 transition-colors text-lg"
             >
@@ -411,12 +493,12 @@ export default function App() {
           </div>
 
           <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-natural-bg via-natural-bg to-transparent max-w-md mx-auto">
-            <button 
+            <button
               onClick={confirmTransaction}
               className="w-full bg-natural-green hover:bg-natural-green-dark text-white py-5 rounded-[32px] font-serif text-xl shadow-[0_10px_30px_rgba(136,158,129,0.3)] flex items-center justify-center transition-transform active:scale-95"
             >
               <Check size={24} className="mr-2" />
-              Confirmar {isCompra ? 'Compra' : 'Salida'}
+              Confirmar {isCompra ? "Compra" : "Salida"}
             </button>
           </div>
         </div>
@@ -425,28 +507,34 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-natural-bg min-h-screen flex flex-col relative shadow-2xl overflow-hidden font-sans text-natural-text">
-      <div className="flex-1 overflow-hidden">
-        {activeFlow !== 'none' ? renderFlow() : (
-          currentTab === 'home' ? renderHome() : renderInventory()
-        )}
+    <div className="max-w-md mx-auto bg-natural-bg h-screen flex flex-col relative shadow-2xl overflow-hidden font-sans text-natural-text">
+      <div className="flex-1 overflow-y-auto">
+        {activeFlow !== "none"
+          ? renderFlow()
+          : currentTab === "home"
+            ? renderHome()
+            : renderInventory()}
       </div>
 
-      {activeFlow === 'none' && (
+      {activeFlow === "none" && (
         <div className="bg-natural-card border-t border-natural-border flex justify-around p-3 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.02)] z-10 relative">
-          <button 
-            onClick={() => setCurrentTab('home')}
-            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === 'home' ? 'text-natural-green-dark bg-natural-sand' : 'text-natural-text-light hover:text-natural-text'}`}
+          <button
+            onClick={() => setCurrentTab("home")}
+            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === "home" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
           >
             <Home size={24} className="mb-1" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Inicio</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Inicio
+            </span>
           </button>
-          <button 
-            onClick={() => setCurrentTab('inventory')}
-            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === 'inventory' ? 'text-natural-green-dark bg-natural-sand' : 'text-natural-text-light hover:text-natural-text'}`}
+          <button
+            onClick={() => setCurrentTab("inventory")}
+            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === "inventory" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
           >
             <Package size={24} className="mb-1" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Inventario</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Inventario
+            </span>
           </button>
         </div>
       )}
@@ -456,36 +544,51 @@ export default function App() {
           <div className="bg-natural-card rounded-[32px] p-8 w-full max-w-sm shadow-[0_20px_40px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in duration-200 border border-natural-border">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-2xl font-serif text-natural-text">Corregir</h3>
-                <p className="text-natural-text-light mt-1 text-sm">{adjustProduct.name}</p>
+                <h3 className="text-2xl font-serif text-natural-text">
+                  Corregir
+                </h3>
+                <p className="text-natural-text-light mt-1 text-sm">
+                  {adjustProduct.name}
+                </p>
               </div>
-              <button onClick={() => setAdjustProduct(null)} className="p-2 bg-natural-sand text-natural-text-light rounded-full hover:text-natural-text transition-colors">
+              <button
+                onClick={() => setAdjustProduct(null)}
+                className="p-2 bg-natural-sand text-natural-text-light rounded-full hover:text-natural-text transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
 
             <div className="mb-8">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-4 text-center">Cantidad Real</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-4 text-center">
+                Cantidad Real
+              </label>
               <div className="flex items-center justify-center space-x-6 bg-natural-sand p-3 rounded-[24px]">
-                <button 
-                  onClick={() => setAdjustQuantity(Math.max(0, adjustQuantity - 1))}
+                <button
+                  onClick={() =>
+                    setAdjustQuantity(Math.max(0, adjustQuantity - 1))
+                  }
                   className="p-4 bg-natural-card rounded-[16px] shadow-sm text-natural-text hover:text-natural-green-dark active:scale-95 transition-all"
                 >
-                  <Minus size={24}/>
+                  <Minus size={24} />
                 </button>
-                <span className="font-serif font-bold text-4xl w-16 text-center text-natural-green-dark">{adjustQuantity}</span>
-                <button 
+                <span className="font-serif font-bold text-4xl w-16 text-center text-natural-green-dark">
+                  {adjustQuantity}
+                </span>
+                <button
                   onClick={() => setAdjustQuantity(adjustQuantity + 1)}
                   className="p-4 bg-natural-card rounded-[16px] shadow-sm text-natural-text hover:text-natural-green-dark active:scale-95 transition-all"
                 >
-                  <Plus size={24}/>
+                  <Plus size={24} />
                 </button>
               </div>
             </div>
 
             <div className="mb-8">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-3">Motivo del ajuste</label>
-              <textarea 
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-3">
+                Motivo del ajuste
+              </label>
+              <textarea
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
                 placeholder="Ej. Producto caducado, error de conteo..."
@@ -493,19 +596,24 @@ export default function App() {
               />
             </div>
 
-            <button 
+            <button
               onClick={confirmAdjust}
-              disabled={!adjustReason.trim() && adjustQuantity !== adjustProduct.quantity}
+              disabled={
+                !adjustReason.trim() &&
+                adjustQuantity !== adjustProduct.quantity
+              }
               className="w-full bg-natural-green disabled:bg-natural-sand disabled:text-natural-text-light disabled:cursor-not-allowed hover:bg-natural-green-dark text-white py-5 rounded-[32px] font-serif text-xl shadow-[0_10px_30px_rgba(136,158,129,0.2)] flex items-center justify-center transition-all"
             >
               <Check size={24} className="mr-2" />
               Guardar
             </button>
-            {(!adjustReason.trim() && adjustQuantity !== adjustProduct.quantity) && (
-              <p className="text-center text-xs text-natural-clay mt-4 flex items-center justify-center">
-                <AlertCircle size={14} className="mr-1" /> Debes ingresar un motivo
-              </p>
-            )}
+            {!adjustReason.trim() &&
+              adjustQuantity !== adjustProduct.quantity && (
+                <p className="text-center text-xs text-natural-green-dark mt-4 flex items-center justify-center">
+                  <AlertCircle size={14} className="mr-1" /> Debes ingresar un
+                  motivo
+                </p>
+              )}
           </div>
         </div>
       )}
@@ -515,18 +623,27 @@ export default function App() {
           <div className="bg-natural-card rounded-[32px] p-8 w-full max-w-sm shadow-[0_20px_40px_rgba(0,0,0,0.1)] animate-in fade-in zoom-in duration-200 border border-natural-border">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-2xl font-serif text-natural-text">Nuevo Producto</h3>
-                <p className="text-natural-text-light mt-1 text-sm">Completa los detalles</p>
+                <h3 className="text-2xl font-serif text-natural-text">
+                  Nuevo Producto
+                </h3>
+                <p className="text-natural-text-light mt-1 text-sm">
+                  Completa los detalles
+                </p>
               </div>
-              <button onClick={() => setIsAdding(false)} className="p-2 bg-natural-sand text-natural-text-light rounded-full hover:text-natural-text transition-colors">
+              <button
+                onClick={() => setIsAdding(false)}
+                className="p-2 bg-natural-sand text-natural-text-light rounded-full hover:text-natural-text transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
 
             <div className="mb-6">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2">Nombre</label>
-              <input 
-                type="text" 
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2">
+                Nombre
+              </label>
+              <input
+                type="text"
                 value={newProductName}
                 onChange={(e) => setNewProductName(e.target.value)}
                 placeholder="Ej. Jabón de manos"
@@ -536,19 +653,25 @@ export default function App() {
 
             <div className="mb-6 flex space-x-4">
               <div className="flex-1">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">Cantidad</label>
-                <input 
-                  type="number" 
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">
+                  Cantidad
+                </label>
+                <input
+                  type="number"
                   value={newProductQuantity}
-                  onChange={(e) => setNewProductQuantity(parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setNewProductQuantity(parseInt(e.target.value) || 0)
+                  }
                   placeholder="0"
                   className="w-full p-4 bg-natural-bg border border-natural-border rounded-[20px] focus:bg-natural-card focus:border-natural-green focus:ring-1 focus:ring-natural-green outline-none transition-all text-sm font-semibold text-center"
                 />
               </div>
               <div className="w-1/2">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">Unidad</label>
-                <input 
-                  type="text" 
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-natural-text-light mb-2 text-center">
+                  Unidad
+                </label>
+                <input
+                  type="text"
                   value={newProductUnit}
                   onChange={(e) => setNewProductUnit(e.target.value)}
                   placeholder="Ej. cajas"
@@ -557,7 +680,7 @@ export default function App() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={confirmAdd}
               disabled={!newProductName.trim()}
               className="w-full bg-natural-green disabled:bg-natural-sand disabled:text-natural-text-light disabled:cursor-not-allowed hover:bg-natural-green-dark text-white py-5 rounded-[32px] font-serif text-xl shadow-[0_10px_30px_rgba(136,158,129,0.2)] flex items-center justify-center transition-all"

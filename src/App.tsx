@@ -13,8 +13,11 @@ import {
   ChevronLeft,
   AlertCircle,
   Trash2,
+  History,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
-import { Product, TransactionItem } from "./types";
+import { Product, TransactionItem, HistoryEntry } from "./types";
 
 const INITIAL_INVENTORY: Product[] = [
   { id: "1", name: "Pañales Adulto Talla G", quantity: 45, unit: "paquetes" },
@@ -25,8 +28,9 @@ const INITIAL_INVENTORY: Product[] = [
 ];
 
 const LOCAL_STORAGE_KEY = "asilogest_inventory";
+const HISTORY_STORAGE_KEY = "asilogest_history";
 
-type Tab = "home" | "inventory";
+type Tab = "home" | "inventory" | "history";
 type Flow = "none" | "compra" | "salida";
 type Step = "camera" | "processing" | "review";
 
@@ -36,9 +40,18 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_INVENTORY;
   });
 
+  const [history, setHistory] = useState<HistoryEntry[]>(() => {
+    const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(inventory));
   }, [inventory]);
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  }, [history]);
 
   const [currentTab, setCurrentTab] = useState<Tab>("home");
   const [activeFlow, setActiveFlow] = useState<Flow>("none");
@@ -134,33 +147,64 @@ export default function App() {
 
   const confirmTransaction = () => {
     let updatedInventory = [...inventory];
+    const newHistoryEntries: HistoryEntry[] = [];
+
     tempItems.forEach((item) => {
       if (!item.name.trim()) return;
       const existingIndex = updatedInventory.findIndex(
         (p) =>
           p.id === item.id || p.name.toLowerCase() === item.name.toLowerCase(),
       );
+
+      let prevQty = 0;
+      let newQty = 0;
+
       if (activeFlow === "compra") {
         if (existingIndex >= 0) {
+          prevQty = updatedInventory[existingIndex].quantity;
           updatedInventory[existingIndex].quantity += item.quantity;
+          newQty = updatedInventory[existingIndex].quantity;
         } else {
+          prevQty = 0;
+          const newId = item.id || Date.now().toString();
           updatedInventory.push({
-            id: item.id || Date.now().toString(),
+            id: newId,
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
           });
+          newQty = item.quantity;
         }
+        newHistoryEntries.push({
+          id: Math.random().toString(36).substr(2, 9),
+          date: new Date().toISOString(),
+          type: "compra",
+          productName: item.name,
+          quantityChange: item.quantity,
+          newQuantity: newQty,
+        });
       } else if (activeFlow === "salida") {
         if (existingIndex >= 0) {
+          prevQty = updatedInventory[existingIndex].quantity;
           updatedInventory[existingIndex].quantity = Math.max(
             0,
             updatedInventory[existingIndex].quantity - item.quantity,
           );
+          newQty = updatedInventory[existingIndex].quantity;
+          newHistoryEntries.push({
+            id: Math.random().toString(36).substr(2, 9),
+            date: new Date().toISOString(),
+            type: "salida",
+            productName: item.name,
+            quantityChange: -item.quantity,
+            newQuantity: newQty,
+          });
         }
       }
     });
+
     setInventory(updatedInventory);
+    setHistory([...newHistoryEntries, ...history]);
     cancelFlow();
     setCurrentTab("inventory");
   };
@@ -177,14 +221,35 @@ export default function App() {
         p.id === adjustProduct.id ? { ...p, quantity: adjustQuantity } : p,
       );
       setInventory(updatedInventory);
-      console.log(
-        `Ajuste guardado para ${adjustProduct.name}. Motivo: ${adjustReason}`,
-      );
+
+      const newEntry: HistoryEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        date: new Date().toISOString(),
+        type: "ajuste",
+        productName: adjustProduct.name,
+        quantityChange: adjustQuantity - adjustProduct.quantity,
+        newQuantity: adjustQuantity,
+        reason: adjustReason,
+      };
+      setHistory([newEntry, ...history]);
+
       setAdjustProduct(null);
     }
   };
 
   const deleteProduct = (id: string) => {
+    const productToDelete = inventory.find((p) => p.id === id);
+    if (productToDelete) {
+      const newEntry: HistoryEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        date: new Date().toISOString(),
+        type: "eliminacion",
+        productName: productToDelete.name,
+        quantityChange: -productToDelete.quantity,
+        newQuantity: 0,
+      };
+      setHistory([newEntry, ...history]);
+    }
     setInventory(inventory.filter((p) => p.id !== id));
   };
 
@@ -197,6 +262,17 @@ export default function App() {
         unit: newProductUnit,
       };
       setInventory([...inventory, newProduct]);
+
+      const newEntry: HistoryEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        date: new Date().toISOString(),
+        type: "creacion",
+        productName: newProductName,
+        quantityChange: newProductQuantity,
+        newQuantity: newProductQuantity,
+      };
+      setHistory([newEntry, ...history]);
+
       setIsAdding(false);
       setNewProductName("");
       setNewProductQuantity(1);
@@ -246,6 +322,113 @@ export default function App() {
       </button>
     </div>
   );
+
+  const renderHistory = () => {
+    return (
+      <div className="p-8 flex flex-col h-full">
+        <div className="flex justify-between items-center mb-8 mt-2">
+          <h1 className="text-3xl font-serif text-natural-text">Historial</h1>
+          <button
+            onClick={() => {
+              if (window.confirm("¿Estás seguro de que deseas limpiar todo el historial?")) {
+                setHistory([]);
+              }
+            }}
+            className="text-natural-clay text-xs font-bold uppercase tracking-widest hover:underline"
+          >
+            Limpiar
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-4 pb-24">
+          {history.length === 0 ? (
+            <div className="text-center py-12 text-natural-text-light">
+              <History size={48} className="mx-auto mb-4 opacity-20" />
+              <p>No hay registros todavía.</p>
+            </div>
+          ) : (
+            history.map((entry) => (
+              <div
+                key={entry.id}
+                className="bg-natural-card p-5 rounded-[28px] shadow-[0_5px_15px_rgba(0,0,0,0.02)] border border-natural-border"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center">
+                    <div
+                      className={`p-2 rounded-full mr-3 ${
+                        entry.type === "compra" || entry.type === "creacion"
+                          ? "bg-natural-green/10 text-natural-green-dark"
+                          : entry.type === "salida" || entry.type === "eliminacion"
+                            ? "bg-natural-clay/10 text-natural-green-dark"
+                            : "bg-natural-sand text-natural-text-light"
+                      }`}
+                    >
+                      {entry.type === "compra" || entry.type === "creacion" ? (
+                        <TrendingUp size={16} />
+                      ) : entry.type === "salida" || entry.type === "eliminacion" ? (
+                        <TrendingDown size={16} />
+                      ) : (
+                        <History size={16} />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-natural-text leading-tight">
+                        {entry.productName}
+                      </h4>
+                      <p className="text-[10px] text-natural-text-light uppercase tracking-widest mt-0.5">
+                        {new Date(entry.date).toLocaleString("es-MX", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`text-lg font-serif font-bold ${
+                        entry.quantityChange > 0
+                          ? "text-natural-green-dark"
+                          : entry.quantityChange < 0
+                            ? "text-natural-green-dark"
+                            : "text-natural-text-light"
+                      }`}
+                    >
+                      {entry.quantityChange > 0 ? "+" : ""}
+                      {entry.quantityChange}
+                    </span>
+                    <p className="text-[9px] text-natural-text-light font-bold uppercase tracking-tighter">
+                      Total: {entry.newQuantity}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-natural-border/50">
+                  <span className="text-[10px] bg-natural-sand px-2 py-0.5 rounded-full text-natural-text-light font-bold uppercase tracking-widest">
+                    {entry.type === "compra"
+                      ? "Compra"
+                      : entry.type === "salida"
+                        ? "Salida"
+                        : entry.type === "ajuste"
+                          ? "Ajuste"
+                          : entry.type === "creacion"
+                            ? "Nuevo"
+                            : "Eliminado"}
+                  </span>
+                  {entry.reason && (
+                    <p className="text-xs text-natural-text-light italic max-w-[150px] truncate">
+                      "{entry.reason}"
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderInventory = () => {
     const filtered = inventory.filter((p) =>
@@ -513,27 +696,38 @@ export default function App() {
           ? renderFlow()
           : currentTab === "home"
             ? renderHome()
-            : renderInventory()}
+            : currentTab === "inventory"
+              ? renderInventory()
+              : renderHistory()}
       </div>
 
       {activeFlow === "none" && (
         <div className="bg-natural-card border-t border-natural-border flex justify-around p-3 pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.02)] z-10 relative">
           <button
             onClick={() => setCurrentTab("home")}
-            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === "home" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
+            className={`flex flex-col items-center py-2 px-4 rounded-[20px] transition-colors ${currentTab === "home" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
           >
-            <Home size={24} className="mb-1" />
+            <Home size={22} className="mb-1" />
             <span className="text-[10px] font-bold uppercase tracking-wider">
               Inicio
             </span>
           </button>
           <button
             onClick={() => setCurrentTab("inventory")}
-            className={`flex flex-col items-center py-2 px-6 rounded-[20px] transition-colors ${currentTab === "inventory" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
+            className={`flex flex-col items-center py-2 px-4 rounded-[20px] transition-colors ${currentTab === "inventory" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
           >
-            <Package size={24} className="mb-1" />
+            <Package size={22} className="mb-1" />
             <span className="text-[10px] font-bold uppercase tracking-wider">
               Inventario
+            </span>
+          </button>
+          <button
+            onClick={() => setCurrentTab("history")}
+            className={`flex flex-col items-center py-2 px-4 rounded-[20px] transition-colors ${currentTab === "history" ? "text-natural-green-dark bg-natural-sand" : "text-natural-text-light hover:text-natural-text"}`}
+          >
+            <History size={22} className="mb-1" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Historial
             </span>
           </button>
         </div>

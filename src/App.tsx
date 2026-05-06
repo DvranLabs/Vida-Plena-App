@@ -330,7 +330,11 @@ export default function App() {
           <h1 className="text-3xl font-serif text-natural-text">Historial</h1>
           <button
             onClick={() => {
-              if (window.confirm("¿Estás seguro de que deseas limpiar todo el historial?")) {
+              if (
+                window.confirm(
+                  "¿Estás seguro de que deseas limpiar todo el historial?",
+                )
+              ) {
                 setHistory([]);
               }
             }}
@@ -358,14 +362,16 @@ export default function App() {
                       className={`p-2 rounded-full mr-3 ${
                         entry.type === "compra" || entry.type === "creacion"
                           ? "bg-natural-green/10 text-natural-green-dark"
-                          : entry.type === "salida" || entry.type === "eliminacion"
+                          : entry.type === "salida" ||
+                              entry.type === "eliminacion"
                             ? "bg-natural-clay/10 text-natural-green-dark"
                             : "bg-natural-sand text-natural-text-light"
                       }`}
                     >
                       {entry.type === "compra" || entry.type === "creacion" ? (
                         <TrendingUp size={16} />
-                      ) : entry.type === "salida" || entry.type === "eliminacion" ? (
+                      ) : entry.type === "salida" ||
+                        entry.type === "eliminacion" ? (
                         <TrendingDown size={16} />
                       ) : (
                         <History size={16} />
